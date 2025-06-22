@@ -173,15 +173,18 @@ class Core:
         self.presence.update(**data)
 
     def acc_is_running(self) -> bool:
-        return (
-            True
-            if check_output(
-                f"wmic process where \"name='{self.acc_process}'\" get ExecutablePath",
+        try:
+            output = check_output(
+                f'tasklist /FI "IMAGENAME eq {self.acc_process}"',
                 universal_newlines=True,
-                stderr=PIPE,
-            ).strip()
-            else False
-        )
+                stderr=PIPE
+            )
+            return self.acc_process.lower() in output.lower()
+        except CalledProcessError:
+            return False
+        except FileNotFoundError:
+            self.message("tasklist command not found", type="error")
+            return False
 
     def main(self) -> None:
         self.start_time = time()
